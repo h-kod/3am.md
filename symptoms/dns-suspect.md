@@ -11,8 +11,8 @@ A record change during an incident propagates for as long as the *old* TTL, so y
    → the number in the second column is the remaining TTL in seconds; that is how long you are stuck, and no amount of flushing changes it for other people
 3. `dig YOUR.NAME | grep -E 'status:|ANSWER:'`
    → `status: NXDOMAIN` → the name does not exist at all · `status: NOERROR` with `ANSWER: 0` → the name exists but not for this record type, e.g. you asked A and only AAAA exists · `status: SERVFAIL` → go to 5
-4. `scutil --dns | grep -m3 nameserver` `[macos]` · `resolvectl status` `[linux]`, then read `/etc/hosts`
-   → a resolver you did not expect, or a stale `/etc/hosts` line → it is only broken for you; a VPN or a corporate proxy is answering
+4. `scutil --dns | grep -m3 nameserver` `[macos]` · `resolvectl status | grep -E 'Current DNS|DNS Servers'` `[linux]`, then read `/etc/hosts`
+   → a resolver you did not expect, or a stale `/etc/hosts` line → it is only broken for you; a VPN or a corporate proxy is answering · no `resolvectl` → read `/etc/resolv.conf`, but `nameserver 127.0.0.53` is systemd-resolved's stub and names nothing; that is not your upstream
 5. `dig +dnssec YOUR.NAME @1.1.1.1` and the same against a non-validating resolver.
    → SERVFAIL only from validating resolvers → DNSSEC is failing, usually after a key rollover; this breaks for roughly half the internet and looks random
 6. `dig NS YOUR.DOMAIN @1.1.1.1` and compare with what your registrar shows.
@@ -20,6 +20,6 @@ A record change during an incident propagates for as long as the *old* TTL, so y
 
 **Nothing matched?** Open an issue with the `dig` output from steps 1 and 3.
 
-*Verified: macOS 26.5, system tools · 2026-08. Steps 1-4 and 6 run as written. Note: `dig +trace` was deliberately left out — it queries the root servers directly and is blocked on many corporate and NAT networks, so it fails in exactly the situation you would reach for it.*
+*Verified: macOS 26.5, system tools · 2026-08. Steps 1-4 and 6 run as written in their macOS form; the `[linux]` half of step 4 is unrun — see the [run matrix](../README.md#where-each-file-has-been-run). Note: `dig +trace` was deliberately left out — it queries the root servers directly and is blocked on many corporate and NAT networks, so it fails in exactly the situation you would reach for it.*
 
 ← [back to the router](../README.md) · [after the fire](../AFTER-THE-FIRE.md)

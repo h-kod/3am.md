@@ -9,8 +9,8 @@ A restart wipes the process state and the connection table — the two things th
    → `code=000 dns=0` → 2 · `code=000 tcp=0` → 3 · `code=000 tls=0` → `cert-expired.md` · `code=5xx` → `intermittent-5xx.md` · `ttfb>2` → `slow-everything.md` · `code=200` → 5
 2. `dig +short A YOUR.SITE @1.1.1.1` then `dig +short A YOUR.SITE`
    → empty from both → `dns-suspect.md` · different answers → `dns-suspect.md` · same and non-empty → 3
-3. `nc -vz -G 5 YOUR.SITE 443` `[macos]` · `nc -vz -w 5 YOUR.SITE 443` `[linux]`
-   → `Connection refused` → nothing is listening: LB target group / process is gone · timeout → packets dropped: firewall, security group, WAF · succeeded → 4
+3. `nc -vz -G 5 YOUR.SITE 443` `[macos]` · `nc -vz -w 5 YOUR.SITE 443; echo "exit=$?"` `[linux]` · no `nc` at all → `timeout 5 bash -c '</dev/tcp/YOUR.SITE/443'; echo "exit=$?"`
+   → `Connection refused` → nothing is listening: LB target group / process is gone · `[macos]` `Operation timed out`, or `[linux]` no output at all and `exit=1` → packets dropped: firewall, security group, WAF · `succeeded` → 4
 4. `curl -sS -o /dev/null --max-time 10 -w 'code=%{http_code} ip=%{remote_ip}\n' --resolve YOUR.SITE:443:ORIGIN_IP https://YOUR.SITE`
    → origin answers → the edge is the problem, not your app: CDN, LB, WAF · origin also fails → your app or its dependencies
 5. Ask one person on a different network (phone hotspot, another region) to load it.
@@ -20,6 +20,6 @@ A restart wipes the process state and the connection table — the two things th
 
 **Nothing matched?** Open an issue with the exact output you got. That is how this file gets better.
 
-*Verified: macOS 26.5, system tools only (no Homebrew) · 2026-08. All six steps run as written. Linux syntax is portable but not yet runtime-verified.*
+*Verified: macOS 26.5, system tools only (no Homebrew) · 2026-08. All six steps run as written in their macOS form. The `[linux]` half of step 3 is unrun — on netcat-openbsd a `-w` timeout prints nothing and is read from the exit code, which is why it does not look like the macOS branch. See the [run matrix](../README.md#where-each-file-has-been-run).*
 
 ← [back to the router](../README.md) · [after the fire](../AFTER-THE-FIRE.md)

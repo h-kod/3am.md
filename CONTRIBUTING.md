@@ -21,11 +21,13 @@ Open a `command failed` issue with the exact command, the exact output, and your
 
 Known and deliberate, recorded here so no footer overstates itself:
 
-- **Linux runtime** — every `[linux]` branch is written from documentation, not run.
-- **PostgreSQL and pgbouncer** — `data-looks-wrong` and `db-connections-exhausted` have no runtime-verified step.
-- **Brokers** — `queue-backlog` steps 1-4 and 6 are unverified for Redis, RabbitMQ and SQS.
+The record lives in the [run matrix](README.md#where-each-file-has-been-run), not in a tracker. It is a table of what has been executed and what has not, and it is the thing to update when you run something.
 
-Closing any of these is more valuable than a new symptom file.
+Two shapes of debt sit in it. **Linux**: every `[linux]` branch was written from documentation on a macOS machine, which means the unverified half serves most of the actual audience. **Infrastructure**: nothing needing PostgreSQL, pgbouncer, Kubernetes or a broker has been run at all.
+
+Every unrun command has at least been read against its documented output, and that pass caught four routing lines that could not fire — `vmstat`'s first row is an average since boot, `kubectl get pods -o wide` has no image column, SQS counts do not refresh on demand, and `nc -w` prints nothing on timeout. Those are fixed. Reading is not running, no footer counts it, and the matrix still shows them unrun.
+
+Turning one row of that table green is worth more than a new symptom file. Run the commands, fix what the output contradicts, update the file footer and the matrix row in the same PR.
 
 ## What gets rejected
 

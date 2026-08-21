@@ -52,9 +52,10 @@ First: can you reproduce it right now, from your own machine? If no → is-it-us
 2. dig +short A YOUR.SITE @1.1.1.1  then  dig +short A YOUR.SITE
    → both empty → dns-suspect.md · answers differ → dns-suspect.md · same → 3
 
-3. nc -vz -G 5 YOUR.SITE 443 [macos] · nc -vz -w 5 YOUR.SITE 443 [linux]
+3. nc -vz -G 5 YOUR.SITE 443 [macos] · nc -vz -w 5 YOUR.SITE 443; echo "exit=$?" [linux]
    → refused → nothing is listening: LB target group / the process is gone
-   · timeout → packets dropped: firewall, security group, WAF · succeeded → 4
+   · [macos] timed out, or [linux] no output and exit=1 → packets dropped:
+   firewall, security group, WAF · succeeded → 4
    ...
 ```
 
@@ -74,14 +75,38 @@ Most of the damage in an incident comes from the first reflex, not from the fail
 
 ## How the commands are verified
 
-Every command was run before it shipped. Each file's footer records which of its steps were executed and on what — and where a step could not be run, it says so plainly instead of implying otherwise.
+Each file's footer records which of its steps were executed and on what — and where a step could not be run, it says so plainly instead of implying otherwise. The table further down is that record collected in one place, and it is not all green.
 
 That is not ceremony. Two commands in the first draft were wrong in ways only running them reveals:
 
 - **`curl --dns-servers 1.1.1.1`** — a standard suggestion, and macOS system curl *rejects the flag outright*: it is built without c-ares. The file now resolves with `dig` and pins the answer with `--resolve`.
 - **`lsof +L1`** for deleted-but-open files — correct, and it returned **570 harmless matches on a healthy machine** next to the one that mattered, a 101 MB browser temp file. At 3am, 570 false positives is the same as no answer. The step now filters by size.
 
-Known gaps are written down rather than papered over: every `[linux]` branch, and all of the PostgreSQL and broker steps, are documented-but-unrun. See [CONTRIBUTING.md](CONTRIBUTING.md#verification-debt).
+Known gaps are written down rather than papered over. Every unrun command has at least been read against its documented output, which caught four routing lines that could not fire: `vmstat`'s first row is an average since boot, so a swap branch tripped on healthy machines; `kubectl get pods -o wide` has no image column and was asked to count images; SQS message counts do not refresh on demand, so "measure twice, ten seconds apart" read a filling queue as flat; and `nc -w` prints nothing on timeout, so that branch had no output to match. Those are fixed. Reading is not running, and the table below still shows them unrun.
+
+## Where each file has been run
+
+The honest version of the badge at the top. A row is only as good as its **Not run** column.
+
+| File | Run as written | Not run |
+|---|---|---|
+| [cert-expired](symptoms/cert-expired.md) | macOS 26.5, LibreSSL and Homebrew OpenSSL — all 6 | — |
+| [data-looks-wrong](symptoms/data-looks-wrong.md) | — | steps 1-5 · PostgreSQL 16 |
+| [db-connections-exhausted](symptoms/db-connections-exhausted.md) | — | all 6 · PostgreSQL 16, pgbouncer 1.22 |
+| [deploy-made-it-worse](symptoms/deploy-made-it-worse.md) | macOS, git 2.x — steps 1, 2, 4, 6 | steps 3, 5 · Kubernetes |
+| [disk-full](symptoms/disk-full.md) | macOS — steps 1-5 | step 2 on GNU and busybox `du` · `journalctl` in 6 |
+| [dns-suspect](symptoms/dns-suspect.md) | macOS — steps 1-4, 6 | `[linux]` half of 4 · step 5 (DNSSEC) |
+| [intermittent-5xx](symptoms/intermittent-5xx.md) | macOS — steps 1-3, 5, 6 | step 4 · Kubernetes, AWS |
+| [is-it-us](symptoms/is-it-us.md) | macOS — steps 1-2, against a live Statuspage API | steps 3-6 · the footer does not say either way |
+| [it-fixed-itself](symptoms/it-fixed-itself.md) | macOS — `crontab -l`, `ps -o lstart`, `uptime` | `journalctl` in 2 · `kubectl` in 2, 4, 6 |
+| [oom-killed](symptoms/oom-killed.md) | macOS — steps 3-5, macOS half of 6 | step 1 · Linux · step 2 · Kubernetes · `vmstat` in 6 |
+| [queue-backlog](symptoms/queue-backlog.md) | — | steps 1-4, 6 · Redis, RabbitMQ, SQS |
+| [site-down-but-server-up](symptoms/site-down-but-server-up.md) | macOS 26.5, system tools only — all 6 | `[linux]` half of 3 |
+| [slow-everything](symptoms/slow-everything.md) | macOS — steps 1-3, 5, macOS half of 6 | step 4 · PostgreSQL · `vmstat` in 6 |
+
+Two things that table says out loud. **The repo was written on macOS and almost all production is Linux**, so the verified half serves the smaller audience. And **`is-it-us` steps 3-6 have no record at all** — a gap in the bookkeeping rather than in the testing, and the first thing worth closing because it costs nothing.
+
+Turning a row green is the most useful contribution here — [CONTRIBUTING.md](CONTRIBUTING.md#verification-debt).
 
 ---
 
@@ -110,7 +135,7 @@ Not your runbook. Not a monitoring guide. Not a list of links. Not exhaustive, o
 
 The most valuable contribution is not a new symptom, it is a **command that failed on your platform**. Platform differences are the usual cause and the most useful fix.
 
-One symptom per file, six steps maximum, nothing that changes the system, and every command run before it ships — [CONTRIBUTING.md](CONTRIBUTING.md).
+One symptom per file, six steps maximum, nothing that changes the system, and every command run before it ships — or a footer that says plainly which ones were not — [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
