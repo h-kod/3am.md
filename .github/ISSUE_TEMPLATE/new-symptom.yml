@@ -1,0 +1,34 @@
+name: A missing symptom
+description: You were in an incident and there was no file for what you were seeing
+labels: [new-symptom]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        New symptoms get in by displacing weak ones, not by piling up — see NON-GOALS.md.
+        A symptom with no first command is a wish, not a file, so step 2 below is the real test.
+  - type: input
+    id: symptom
+    attributes:
+      label: What did you see, in the words you would have used at 3am
+      placeholder: Logins worked but nothing else did
+    validations:
+      required: true
+  - type: textarea
+    id: first-command
+    attributes:
+      label: What was the first command that told you something useful?
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: reflex
+    attributes:
+      label: What was your first reflex, and what would it have destroyed?
+      description: This becomes the DON'T line, which is the reason the file exists.
+    validations:
+      required: true
+  - type: textarea
+    id: cause
+    attributes:
+      label: What was it in the end?

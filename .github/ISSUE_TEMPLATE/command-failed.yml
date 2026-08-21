@@ -1,0 +1,42 @@
+name: A command failed
+description: A command in one of these files did not work, or gave misleading output
+labels: [command-failed]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is the most valuable issue type in the repo. A command that does not run
+        on your platform is a broken promise, and platform differences are the usual cause.
+  - type: input
+    id: file
+    attributes:
+      label: File and step number
+      placeholder: symptoms/disk-full.md step 3
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS and version
+      placeholder: Ubuntu 24.04 / macOS 26.5 / Alpine 3.20 in a container
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: The exact command you ran
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: The exact output you got
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What was misleading about it
+      description: Wrong flag, missing tool, false positives, output that routed you the wrong way.
